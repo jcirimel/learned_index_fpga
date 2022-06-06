@@ -9,7 +9,7 @@ import mill.bsp._
 
 object learned_index_fpga extends SbtModule { m =>
   override def millSourcePath = os.pwd
-  override def scalaVersion = "2.13.8"
+  override def scalaVersion = "2.12.15"
   override def scalacOptions = Seq(
     "-language:reflectiveCalls",
     "-deprecation",
