@@ -21,6 +21,7 @@ class Neuron(p_num_inputs: Int, expWidth: Int, sigWidth: Int, weight: UInt, bias
   mul.io.detectTininess := 0.B
   mul.io.roundingMode := 0.U
 
+  add.io.subOp := 0.B
   add.io.detectTininess := 0.B
   add.io.roundingMode := 0.U
 
@@ -36,9 +37,10 @@ class Neuron(p_num_inputs: Int, expWidth: Int, sigWidth: Int, weight: UInt, bias
 
   add.io.a := mul.io.out
   add.io.b := bias
-
+  io.out := add.io.out
+  
   if(relu == true){
-    when((io.out & (0x8000000.U)) === 1.U) {
+    when((add.io.out & (0x8000000.U)) === 1.U) {
       io.out := 0.U
     }
   }

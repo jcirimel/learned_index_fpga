@@ -7,13 +7,13 @@ import firrtl.transforms.SortModules
 import chisel3.stage.ChiselStage
 
 
-class TopIO() extends Bundle {
-  val key = Input(UInt(32.W))
-  val out = Output(UInt(32.W))
+class topIO(expWidth: Int, sigWidth: Int) extends Bundle {
+  val key = Input(UInt((expWidth+sigWidth+1).W))
+  val out = Output(UInt((expWidth+sigWidth+1).W))
 }
 
-class Top(neurons: Int, expWidth: Int, sigWidth: Int, len_stages: Int) extends Module {
-    val io = IO(new TopIO())
+class top(neurons: Int, expWidth: Int, sigWidth: Int, len_stages: Int) extends Module {
+    val io = IO(new topIO(expWidth, sigWidth))
     val data = new test_structure()
     val layer1 = for (i <- 0 until neurons) yield {
             val mod = Module(new Neuron(1,expWidth, sigWidth, data.weights(0)(i), data.biases(0)(i),true))
@@ -37,6 +37,9 @@ class Top(neurons: Int, expWidth: Int, sigWidth: Int, len_stages: Int) extends M
     }
     val len_stages_bits = (log10(len_stages)/log10(2.0)).toInt + 1
     val final_neuron = Module(new Neuron(neurons, expWidth, sigWidth, data.weights(2)(0), data.biases(2)(0), false))
+    for(i <- 0 until neurons){
+        final_neuron.io.inputs(i) := layer2(i).io.out
+    }
     val stages_to_float = Module(new INToRecFN(len_stages_bits, expWidth, sigWidth))
     stages_to_float.io.in := (len_stages.U)
     stages_to_float.io.signedIn := 0.B
@@ -45,6 +48,9 @@ class Top(neurons: Int, expWidth: Int, sigWidth: Int, len_stages: Int) extends M
     
 
     val mul = Module(new MulRecFN(expWidth, sigWidth))
+    mul.io.detectTininess := 0.B
+    mul.io.roundingMode := 0.B
+
     mul.io.a := final_neuron.io.out
     mul.io.b := stages_to_float.io.out
     
@@ -81,5 +87,5 @@ class Top(neurons: Int, expWidth: Int, sigWidth: Int, len_stages: Int) extends M
     io.out := cmux.io.output
 }
 object VerilogMain extends App {
-    (new ChiselStage).emitVerilog(new Top(8, 8, 23,2))
+    (new ChiselStage).emitVerilog(new top(8, 8, 23,2))
 }
